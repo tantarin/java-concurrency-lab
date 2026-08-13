@@ -1,0 +1,12 @@
+.bridge {
+  margin-top: 42px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--panel2), transparent);
+}
+.bridge small {
+  color: var(--accent);
+  font: 700 10px ui-monospace, monospace;
+  letter-spacing: .14em;
+}
+.bridge p { margin: 9px 0 0; color: var(--text); }
