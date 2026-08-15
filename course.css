@@ -10,3 +10,33 @@
   letter-spacing: .14em;
 }
 .bridge p { margin: 9px 0 0; color: var(--text); }
+
+.project-example {
+  margin-top: 42px;
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+}
+.project-example small {
+  color: var(--accent);
+  font: 700 10px ui-monospace, monospace;
+  letter-spacing: .12em;
+}
+.project-example h2 { margin: 8px 0 16px; }
+.project-example div { display: grid; gap: 8px; }
+.project-example a {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  color: var(--text);
+  text-decoration: none;
+  background: var(--panel2);
+}
+.project-example a:hover { border-color: var(--accent); }
+.project-example a span { color: var(--muted); white-space: nowrap; }
+@media (max-width: 540px) {
+  .project-example a { display: block; }
+  .project-example a span { display: block; margin-top: 5px; }
+}

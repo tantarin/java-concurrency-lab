@@ -1,4 +1,4 @@
-const CACHE = 'java-threads-v2';
+const CACHE = 'java-threads-v3';
 const FILES = ['./', './index.html', './styles.css', './course.css', './app.js', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', event => {

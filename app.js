@@ -206,7 +206,21 @@ Thread 2: put → 1</code></pre>
     <pre><code>views.merge("car:123", 1, Integer::sum);</code></pre>
     <p>Если ключа нет, <code>merge</code> запишет <code>1</code>. Если он существует, сложит старое значение и единицу. Намерение выражено целиком: «атомарно обнови этот ключ», а не «прочитай сейчас и что-нибудь запиши позже».</p>
     <div class="note">Хороший конкурентный API позволяет выразить составное действие одной операцией и закрывает опасный промежуток между чтением и записью.</div>`,
-    'В заключении соберём весь путь и сформулируем вопросы для проверки любого многопоточного кода.'],
+    'Теперь передадим реальные задачи ограниченному пулу потоков и разберём Executor.'],
+
+  ['Executor: задача отдельно от потока','Пулы потоков',`
+    <p>Менеджер загрузок получает много независимых задач. Создавать новый <code>Thread</code> для каждой ссылки опасно: тысяча ссылок породит тысячу потоков и может исчерпать память.</p>
+    <p><code>Executor</code> разделяет два решения: задача описывает, <em>что</em> сделать, а исполнитель решает, <em>когда и каким потоком</em> её выполнить.</p>
+    <pre><code>ExecutorService executor =
+    Executors.newFixedThreadPool(4);
+
+Future&lt;Download&gt; future =
+    executor.submit(downloadTask);</code></pre>
+    <p>В проекте четыре worker-потока забирают загрузки из внутренней очереди. Поэтому ссылок может быть много, но одновременно код выполняют не больше четырёх worker-ов.</p>
+    <p><code>submit</code> возвращает <code>Future</code>. Через него менеджер может отменить конкретную загрузку вызовом <code>cancel(true)</code>. Аргумент <code>true</code> разрешает послать выполняющему потоку interruption.</p>
+    <p>Пул необходимо закрыть. <code>shutdown()</code> перестаёт принимать новые задачи, но даёт принятым завершиться. Если они не завершились за отведённое время, <code>shutdownNow()</code> пытается их прервать.</p>
+    <div class="note"><strong>Главная мысль:</strong> Executor управляет ограниченным ресурсом — потоками. Мы отправляем ему задачи, не создавая и не переиспользуя потоки вручную.</div>`,
+    'Теперь соберём правила, по которым можно разбирать любой многопоточный код.'],
 
   ['Как рассуждать о многопоточном коде','Итог маршрута',`
     <p>Мы начали со спецификации не случайно. Многопоточность проходит через исходный код, JVM, оптимизации JIT, планировщик и процессор. JMM связывает эти уровни единым набором гарантий.</p>
@@ -225,6 +239,33 @@ atomicity + visibility
     <div class="note">Главный навык — не запоминать классы, а видеть общие данные, границы операции и передачу результатов между потоками.</div>`,
     'Маршрут завершён. К любой главе можно вернуться через список или поиск.']
 ].map(([title, tag, body, bridge]) => ({title, tag, body, bridge}));
+
+const projectExamples = {
+  'Зачем приложениям несколько потоков': [
+    ['Открыть реальную загрузку файла', 'downloader/src/main/java/io/github/tantarin/downloader/DownloadTask.java#L42-L63']
+  ],
+  'Почему изменения нужно «увидеть»': [
+    ['Посмотреть volatile-состояние загрузки', 'downloader/src/main/java/io/github/tantarin/downloader/Download.java#L7-L14']
+  ],
+  'Зачем ConcurrentHashMap': [
+    ['Посмотреть реестр загрузок и задач', 'downloader/src/main/java/io/github/tantarin/downloader/DownloadManager.java#L15-L21']
+  ],
+  'Executor: задача отдельно от потока': [
+    ['Создание фиксированного пула', 'downloader/src/main/java/io/github/tantarin/downloader/DownloadManager.java#L23-L26'],
+    ['Отправка Callable и получение Future', 'downloader/src/main/java/io/github/tantarin/downloader/DownloadManager.java#L28-L37'],
+    ['Отмена задачи через Future', 'downloader/src/main/java/io/github/tantarin/downloader/DownloadManager.java#L57-L68'],
+    ['Корректное завершение ExecutorService', 'downloader/src/main/java/io/github/tantarin/downloader/DownloadManager.java#L70-L80']
+  ]
+};
+
+function renderProjectExamples(topic) {
+  const examples = projectExamples[topic.title];
+  if (!examples) return '';
+  const links = examples.map(([label, path]) =>
+    `<a href="https://github.com/tantarin/java-concurrency-lab/blob/main/${path}" target="_blank" rel="noreferrer">${label}<span>Открыть код ↗</span></a>`
+  ).join('');
+  return `<section class="project-example"><small>ЖИВОЙ ПРОЕКТ · CONCURRENT DOWNLOADER</small><h2>Где это используется</h2><div>${links}</div></section>`;
+}
 
 const app = document.querySelector('#app');
 const completed = new Set(JSON.parse(localStorage.getItem('java-threads-completed-v2') || '[]'));
@@ -266,7 +307,7 @@ function showList(search = false) {
 
 function showTopic(index) {
   const topic = topics[index];
-  app.innerHTML = `<article class="article"><button class="back">← Маршрут курса</button><p class="eyebrow">Глава ${index + 1} из ${topics.length} · ${topic.tag}</p><h1>${topic.title}</h1><div class="article-body">${topic.body}<section class="bridge"><small>ДАЛЬШЕ ПО МАРШРУТУ</small><p>${topic.bridge}</p></section></div><div class="article-actions"><button class="primary complete">${completed.has(index) ? '✓ Глава изучена' : 'Отметить изученной'}</button><button class="secondary next">${index === topics.length - 1 ? 'Вернуться к маршруту' : 'Следующая глава →'}</button></div><div class="pager"><button class="prev">${index ? '← Предыдущая глава' : ''}</button><button class="all">Все главы</button></div></article>`;
+  app.innerHTML = `<article class="article"><button class="back">← Маршрут курса</button><p class="eyebrow">Глава ${index + 1} из ${topics.length} · ${topic.tag}</p><h1>${topic.title}</h1><div class="article-body">${topic.body}${renderProjectExamples(topic)}<section class="bridge"><small>ДАЛЬШЕ ПО МАРШРУТУ</small><p>${topic.bridge}</p></section></div><div class="article-actions"><button class="primary complete">${completed.has(index) ? '✓ Глава изучена' : 'Отметить изученной'}</button><button class="secondary next">${index === topics.length - 1 ? 'Вернуться к маршруту' : 'Следующая глава →'}</button></div><div class="pager"><button class="prev">${index ? '← Предыдущая глава' : ''}</button><button class="all">Все главы</button></div></article>`;
   app.querySelector('.back').onclick = showList;
   app.querySelector('.all').onclick = showList;
   app.querySelector('.complete').onclick = () => { completed.add(index); save(); showTopic(index); };
